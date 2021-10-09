@@ -1,6 +1,6 @@
 # monitoredBees 
 is a project for monitoring the weight of a beehive including climate sensors for temperature,humidity and barometric pressure 
-wee can optional add up to 3 external temperature sensors, so we can monitor the temperature in the beehive
+we can optional add up to 3 external temperature sensors, so we can monitor the temperature in the beehive
 
 ## hardware
 - heltec cubecell AB01 
