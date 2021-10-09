@@ -9,4 +9,4 @@ wee can optional add up to 3 external temperature sensors, so we can monitor the
 - 3,7V 1100mAh Lipo Accu 1S 3C
 - optional: solar panel 1W 5V 100mA
 
-##pinout
+## pinout
