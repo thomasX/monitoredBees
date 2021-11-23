@@ -10,3 +10,17 @@ we can optional add up to 3 external temperature sensors, so we can monitor the 
 - optional: solar panel 1W 5V 100mA
 
 ## pinout
+
+|Pin Function |  wiring | cubecell pin |
+|----|----|----|
+|BME280 SCK | | SCK |
+|BME280 SDA | | SDA |
+|    |    |    |
+|HX711 DO|   |  GPIO2 |
+|HX711 CLK|   |  GPIO3 |
+|    |    |    |
+| DS18B20 | pullup 10k to vcc | GPIO4 |
+|    |    |    |
+|----|
+| experimental: |
+|additional up to 7 HX711| oneWire protokoll| |
