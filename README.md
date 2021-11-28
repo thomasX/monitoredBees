@@ -9,7 +9,7 @@ we can optional add up to 3 external temperature sensors, so we can monitor the 
 - 3,7V 1100mAh Lipo Accu 1S 3C
 - optional: solar panel 1W 5V 100mA
 
-## pinout
+### pinout
 
 |Pin Function |  wiring | cubecell pin |
 |----|----|----|
@@ -26,3 +26,14 @@ we can optional add up to 3 external temperature sensors, so we can monitor the 
 |----|
 | experimental: |
 |additional up to 7 HX711| oneWire protokoll| |
+## software
+we use the thingspeak network 
+with the following field-definition it is possible to use the Android and IOS-APP from the honeyPi project (http://www.honey-pi.de ). so we have no extra app to produce
+
+|field1 | temperature inside the hive |
+|field2 | temperature outside the hive |
+|field3 | humidity |
+|field4 | air pressure |
+|field5 | air quality |
+|field6 | weight |
+|field7 | unused |
