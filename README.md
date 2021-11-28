@@ -13,8 +13,10 @@ we can optional add up to 3 external temperature sensors, so we can monitor the 
 
 |Pin Function |  wiring | cubecell pin |
 |----|----|----|
-|BME280 SCK | | SCK |
-|BME280 SDA | | SDA |
+|BME280 SCK | yellow | SCK |
+|BME280 SDA | blue | SDA |
+|BME280 GND | black | gnd |
+|BME280 vcc | red | vcc 3.3V |
 |    |    |    |
 |HX711 DO|   |  GPIO2 |
 |HX711 CLK|   |  GPIO3 |
