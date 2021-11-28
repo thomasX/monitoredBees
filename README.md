@@ -2,6 +2,11 @@
 is a project for monitoring the weight of a beehive including climate sensors for temperature,humidity and barometric pressure 
 we can optional add up to 3 external temperature sensors, so we can monitor the temperature in the beehive
 
+keep in mind, that the max. airtime/node in lora is limited to 30 sec. per day
+with sf=7 .... abaout 500 messages
+with sf=12  ... max 20 messages per day ! 
+... we send the data with an intervall of 5 minutes -> 288 messages per day
+
 ## hardware
 - heltec cubecell AB01 
 - Waveshare BME280 (Environmental Sensor, Temperature, Humidity, Barometric Pressure Detection Module Low Power Consumption I2C/SPI Interface)
