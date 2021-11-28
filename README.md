@@ -28,12 +28,14 @@ we can optional add up to 3 external temperature sensors, so we can monitor the 
 |additional up to 7 HX711| oneWire protokoll| |
 ## software
 we use the thingspeak network 
-with the following field-definition it is possible to use the Android and IOS-APP from the honeyPi project (http://www.honey-pi.de ). so we have no extra app to produce
+with the following field-definition it is possible to use the Android and IOS-APP from the honeyPi project (http://www.honey-pi.de ). so we have no extra app to produce     
 
-|field1 | temperature inside the hive |
-|field2 | temperature outside the hive |
-|field3 | humidity |
-|field4 | air pressure |
-|field5 | air quality |
-|field6 | weight |
-|field7 | unused |
+| Field | Usage |
+| ---- | ---- |
+| field1 | temperature inside the hive |
+| field2 | temperature outside the hive |
+| field3 | humidity |
+| field4 | air pressure |
+| field5 | air quality |
+| field6 | weight |
+| field7 | unused |
