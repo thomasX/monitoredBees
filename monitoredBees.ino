@@ -10,6 +10,10 @@
 
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
+#include "Seeed_BME280.h"
+#include <Wire.h>
+
+BME280 bme280;
 
 
 
@@ -49,6 +53,8 @@
 static TimerEvent_t sleep;
 static TimerEvent_t wakeUp;
 uint8_t lowpower=0;
+uint8_t isBME280detected=0;
+
 
 const char DEVICE_ID[] PROGMEM = "4567";
 char txpacket[BUFFER_SIZE];
@@ -80,34 +86,6 @@ typedef enum
 
 States_t state;
 
-
-
-void setup() {
-    Serial.begin(115200);
-    Serial.print("INITIALIZING !!! \r\n");
-    insideTemp=0.0;
-    outsideTemp=0.0;
-    humidity=0.0;
-    airPressure=0.0;
-    airQuality=0;
-    unusedField=0.0;
-    rssi=0;
-    RadioEvents.TxDone = OnTxDone;
-    RadioEvents.TxTimeout = OnTxTimeout;
-
-    Radio.Init( &RadioEvents );
-    Radio.SetChannel( RF_FREQUENCY );
-    Radio.SetTxConfig( MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
-                                   LORA_SPREADING_FACTOR, LORA_CODINGRATE,
-                                   LORA_PREAMBLE_LENGTH, LORA_FIX_LENGTH_PAYLOAD_ON,
-                                   true, 0, 0, LORA_IQ_INVERSION_ON, 3000 ); 
-
-    TimerInit( &sleep, onSleep );
-    TimerInit( &wakeUp, onWakeUp );
-    state=READSENSORDATA;
-    Serial.printf("STATE:READSENSORDATA\r\n");
-   }
-
 void onSleep()
 {
   Serial.printf("Going into lowpower mode, %d ms later wake up.\r\n",timetillwakeup);
@@ -126,40 +104,16 @@ void onWakeUp()
   state=READSENSORDATA;
 }
 
-void loop()
-{ 
-  if (lowpower) {
-    lowPowerHandler();
-  } else {
-    switch(state)
-    {
-      case TX: {
-        sendLoraData();
-        break;
-      }
-      case READSENSORDATA:
-      {
-        readSensorValues();
-        break;
-      }
-      case WAITING:
-      {
-        Radio.IrqProcess();
-        break;
-      }
-    }
-  }
-}
 
 void sendLoraData()
 {
   turnOnRGB(COLOR_RECEIVED,0); //change rgb color
-  generateDataPacket();	
-	turnOnRGB(COLOR_SEND,0); //change rgb color
+  generateDataPacket();  
+  turnOnRGB(COLOR_SEND,0); //change rgb color
 
-	Serial.printf("sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
+  Serial.printf("sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
   state=WAITING;
-	Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out	
+  Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out 
   Serial.printf("STATE: SENDING\r\n");
   delay(500);
   turnOffRGB();
@@ -167,7 +121,7 @@ void sendLoraData()
 
 void generateDataPacket( void )
 {
-  	sprintf(txpacket,"<%s>field1=",DEVICE_ID);
+    sprintf(txpacket,"<%s>field1=",DEVICE_ID);
     DoubleToString(txpacket,insideTemp,3);
     sprintf(txpacket,"%s&field2=",txpacket);
     DoubleToString(txpacket,outsideTemp,3);
@@ -184,6 +138,14 @@ void generateDataPacket( void )
 void readSensorValues( void )
 {
   Serial.printf("bin im readSensoValues\r\n");
+  if (isBME280detected) {
+    insideTemp=0.0;
+    outsideTemp=bme280.getTemperature();
+    humidity=bme280.getHumidity();
+    airPressure=bme280.getPressure();
+    airQuality=0;
+    unusedField=bme280.calcAltitude(airPressure);
+  }
   state=TX;
   Serial.printf("STATE: TX\r\n");
 }
@@ -218,4 +180,62 @@ void  DoubleToString( char *str, double double_num,unsigned int len) {
   fractpart = fractpart * (pow(10,len));
   sprintf(str + strlen(str),"%d", (int)(intpart)); //Integer part
   sprintf(str + strlen(str), ".%d", (int)(fractpart)); //Decimal part
+}
+
+
+void setup() {
+    pinMode(Vext, OUTPUT);
+    digitalWrite(Vext, LOW);
+    delay(500);
+    Serial.begin(115200);
+    Serial.print("INITIALIZING !!! \r\n");
+    if (bme280.init()) isBME280detected=1;
+    insideTemp=0.0;
+    outsideTemp=0.0;
+    humidity=0.0;
+    airPressure=0.0;
+    airQuality=0;
+    unusedField=0.0;
+    rssi=0;
+    RadioEvents.TxDone = OnTxDone;
+    RadioEvents.TxTimeout = OnTxTimeout;
+
+    Radio.Init( &RadioEvents );
+    Radio.SetChannel( RF_FREQUENCY );
+    Radio.SetTxConfig( MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
+                                   LORA_SPREADING_FACTOR, LORA_CODINGRATE,
+                                   LORA_PREAMBLE_LENGTH, LORA_FIX_LENGTH_PAYLOAD_ON,
+                                   true, 0, 0, LORA_IQ_INVERSION_ON, 3000 ); 
+
+    TimerInit( &sleep, onSleep );
+    TimerInit( &wakeUp, onWakeUp );
+    state=READSENSORDATA;
+    Serial.printf("STATE:READSENSORDATA\r\n");
+   }
+
+
+
+void loop()
+{ 
+  if (lowpower==1) {
+    lowPowerHandler();
+  } else {
+    switch(state)
+    {
+      case TX: {
+        sendLoraData();
+        break;
+      }
+      case READSENSORDATA:
+      {
+        readSensorValues();
+        break;
+      }
+      case WAITING:
+      {
+        Radio.IrqProcess();
+        break;
+      }
+    }
+  }
 }
