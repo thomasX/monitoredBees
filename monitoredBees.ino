@@ -10,12 +10,16 @@
 
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
-#include "Seeed_BME280.h"
 #include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
-BME280 bme280;
 
-
+#define SEALEVELPRESSURE_HPA (1013.25)
+#define USEIIC 1
+#define BME280_ADDRESS (0x76)
+Adafruit_BME280 bme280; // I2C
 
 
 /*
@@ -50,10 +54,18 @@ BME280 bme280;
 
 // ---- toms paramater
 #define timetillwakeup 300000
+//#define timetillwakeup 10000
+
+
+
+
+
+
+
 static TimerEvent_t sleep;
 static TimerEvent_t wakeUp;
 uint8_t lowpower=0;
-uint8_t isBME280detected=0;
+
 
 
 const char DEVICE_ID[] PROGMEM = "4567";
@@ -64,18 +76,21 @@ static RadioEvents_t RadioEvents;
 void OnTxDone( void );
 void OnTxTimeout( void );
 
-
 double insideTemp;
 double outsideTemp;
 double humidity;
 double airPressure;
+double airPressureHPA;
 double airQuality;
 double unusedField;
+double voltage;
 
 
 
 int16_t rssi,rxSize;
 void  DoubleToString( char *str, double double_num,unsigned int len);
+unsigned BME280detected;
+
 
 typedef enum
 {
@@ -107,16 +122,16 @@ void onWakeUp()
 
 void sendLoraData()
 {
-  turnOnRGB(COLOR_RECEIVED,0); //change rgb color
+  //1turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
   generateDataPacket();  
-  turnOnRGB(COLOR_SEND,0); //change rgb color
+  //1turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
 
   Serial.printf("sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
   state=WAITING;
   Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out 
   Serial.printf("STATE: SENDING\r\n");
-  delay(500);
-  turnOffRGB();
+  //delay(500);
+  //1turnOffRGB();    ... funktioniert nicht mit lowpower und sensor
 }
 
 void generateDataPacket( void )
@@ -128,9 +143,11 @@ void generateDataPacket( void )
     sprintf(txpacket,"%s&field3=",txpacket);
     DoubleToString(txpacket,humidity,3);
     sprintf(txpacket,"%s&field4=",txpacket);
-    DoubleToString(txpacket,airPressure,3);
+    DoubleToString(txpacket,airPressureHPA,3);  
+    //DoubleToString(txpacket,airPressure,3);
     sprintf(txpacket,"%s&field5=",txpacket);
-    DoubleToString(txpacket,airQuality,3);
+ //   DoubleToString(txpacket,airQuality,3);
+    DoubleToString(txpacket,voltage,3);
     sprintf(txpacket,"%s&field6=",txpacket);
     DoubleToString(txpacket,unusedField,3);
 }
@@ -138,13 +155,24 @@ void generateDataPacket( void )
 void readSensorValues( void )
 {
   Serial.printf("bin im readSensoValues\r\n");
-  if (isBME280detected) {
+    digitalWrite(Vext, LOW);
+    BME280detected=bme280.begin();
+  if (BME280detected) {
+    Serial.printf("bin da\r\n");
+     delay(100);
     insideTemp=0.0;
-    outsideTemp=bme280.getTemperature();
-    humidity=bme280.getHumidity();
-    airPressure=bme280.getPressure();
+    Serial.print("oooo   :");
+    Serial.println(bme280.readTemperature());
+    outsideTemp=bme280.readTemperature();
+    humidity=bme280.readHumidity();
+    airPressure=bme280.readPressure();
+    airPressureHPA=(airPressure / 100.0);
     airQuality=0;
-    unusedField=bme280.calcAltitude(airPressure);
+    unusedField=bme280.readAltitude(SEALEVELPRESSURE_HPA);
+    Wire.end();
+    uint16_t voltageRAW = getBatteryVoltage();
+    voltage = static_cast<double>(voltageRAW);
+    voltage = (voltage / 1000.0);
   }
   state=TX;
   Serial.printf("STATE: TX\r\n");
@@ -156,7 +184,7 @@ void OnTxDone( void )
   delay(500);
   state=WAITING;
   onSleep();
-  //turnOnRGB(0,0);
+  //turnOnRGB(0,0);  ... funktioniert nicht mit lowpower und sensor
 }
 
 void OnTxTimeout( void )
@@ -188,14 +216,23 @@ void setup() {
     digitalWrite(Vext, LOW);
     delay(500);
     Serial.begin(115200);
-    Serial.print("INITIALIZING !!! \r\n");
-    if (bme280.init()) isBME280detected=1;
+    delay(2000);
+    while(!Serial);    // time to get serial running
+    Serial.print("monitoredBees is initializing \r\n");
+    BME280detected=bme280.begin();
+    if (BME280detected) Serial.printf("BME280 initialized= %s \r\n","true");
+    if (!BME280detected)Serial.printf("BME280 initialized= %s \r\n","false");
+    //digitalWrite(Vext, LOW);
+
+
     insideTemp=0.0;
     outsideTemp=0.0;
     humidity=0.0;
     airPressure=0.0;
+    airPressureHPA=0.0;
     airQuality=0;
     unusedField=0.0;
+    voltage=0;
     rssi=0;
     RadioEvents.TxDone = OnTxDone;
     RadioEvents.TxTimeout = OnTxTimeout;
