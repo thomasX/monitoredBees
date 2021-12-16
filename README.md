@@ -21,16 +21,20 @@ with sf=12  ... max 20 messages per day !
 |BME280 SCK | yellow | SCK |
 |BME280 SDA | blue | SDA |
 |BME280 GND | black | gnd |
-|BME280 vcc | red | vcc 3.3V |
+|BME280 vcc | red | vext  |
 |    |    |    |
 |HX711 DO|   |  GPIO2 |
 |HX711 CLK|   |  GPIO3 |
 |    |    |    |
-| DS18B20 | pullup 10k to vcc | GPIO4 |
+| DS18B20 | yello pullup 10k to vext | GPIO4 |
+| DS18B20 | red  | vext |
+| DS18B20 | black | gnd |
 |    |    |    |
-|----|
 | experimental: |
 |additional up to 7 HX711| oneWire protokoll| |
+|----|
+|    |    |    |
+
 ## software
 we use the thingspeak network 
 with the following field-definition it is possible to use the Android and IOS-APP from the honeyPi project (http://www.honey-pi.de ). so we have no extra app to produce     
