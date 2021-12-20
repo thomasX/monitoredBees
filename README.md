@@ -25,6 +25,8 @@ with sf=12  ... max 20 messages per day !
 |    |    |    |
 |HX711 DO|   |  GPIO2 |
 |HX711 CLK|   |  GPIO3 |
+|HX711 GND|   |  GND |
+|HX711 VCC|   |  GPIO3 |
 |    |    |    |
 | DS18B20 | yello pullup 10k to vext | GPIO4 |
 | DS18B20 | red  | vext |
