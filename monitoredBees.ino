@@ -14,6 +14,12 @@
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS GPIO0
+OneWire oneWire(ONE_WIRE_BUS);
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
 
 
 #define SEALEVELPRESSURE_HPA (1013.25)
@@ -49,12 +55,13 @@ Adafruit_BME280 bme280; // I2C
 
 #define RX_TIMEOUT_VALUE                            1000
 //#define BUFFER_SIZE                                 30 // Define the payload size here
-#define BUFFER_SIZE                                 80 // Define the payload size here
+#define BUFFER_SIZE                                 150 // Define the payload size here
 
 
-// ---- toms paramater
-#define timetillwakeup 300000
-//#define timetillwakeup 10000
+// ---- toms paramater 15 minuten takt
+#define timetillwakeup 1000*60*15
+//#define timetillwakeup 1000*10
+
 
 
 
@@ -159,8 +166,12 @@ void readSensorValues( void )
     BME280detected=bme280.begin();
   if (BME280detected) {
     Serial.printf("bin da\r\n");
-     delay(100);
-    insideTemp=0.0;
+     delay(500);
+
+    sensors.requestTemperatures();
+    
+    insideTemp=sensors.getTempCByIndex(0);
+    //insideTemp=0.0;
     Serial.print("oooo   :");
     Serial.println(bme280.readTemperature());
     outsideTemp=bme280.readTemperature();
@@ -219,6 +230,7 @@ void setup() {
     delay(2000);
     while(!Serial);    // time to get serial running
     Serial.print("monitoredBees is initializing \r\n");
+    sensors.begin();
     BME280detected=bme280.begin();
     if (BME280detected) Serial.printf("BME280 initialized= %s \r\n","true");
     if (!BME280detected)Serial.printf("BME280 initialized= %s \r\n","false");
