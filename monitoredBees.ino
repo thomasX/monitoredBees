@@ -16,8 +16,15 @@
 #include <Adafruit_BME280.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <HX711.h>
+const int LOADCELL_DOUT_PIN = GPIO5;
+const int LOADCELL_SCK_PIN = GPIO4;
+
+
 #define ONE_WIRE_BUS GPIO0
 OneWire oneWire(ONE_WIRE_BUS);
+
+
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
@@ -62,6 +69,11 @@ Adafruit_BME280 bme280; // I2C
 #define timetillwakeup 1000*60*15
 //#define timetillwakeup 1000*10
 
+HX711 scale; 
+
+#define LOADCELL_CALIB_FACTOR 234
+#define LOADCELL_TARA 1300
+
 
 
 
@@ -83,14 +95,14 @@ static RadioEvents_t RadioEvents;
 void OnTxDone( void );
 void OnTxTimeout( void );
 
-double insideTemp;
-double outsideTemp;
-double humidity;
-double airPressure;
+double insideTemp; //field1
+double outsideTemp; //field2
+double humidity; //field3
+double airPressure; //field4
+double voltage;//field5
+double weight; // field6
 double airPressureHPA;
-double airQuality;
 double unusedField;
-double voltage;
 
 
 
@@ -151,40 +163,41 @@ void generateDataPacket( void )
     DoubleToString(txpacket,humidity,3);
     sprintf(txpacket,"%s&field4=",txpacket);
     DoubleToString(txpacket,airPressureHPA,3);  
-    //DoubleToString(txpacket,airPressure,3);
     sprintf(txpacket,"%s&field5=",txpacket);
- //   DoubleToString(txpacket,airQuality,3);
     DoubleToString(txpacket,voltage,3);
     sprintf(txpacket,"%s&field6=",txpacket);
-    DoubleToString(txpacket,unusedField,3);
+    DoubleToString(txpacket,weight,3);
 }
 
 void readSensorValues( void )
 {
   Serial.printf("bin im readSensoValues\r\n");
     digitalWrite(Vext, LOW);
+    delay(2000);
     BME280detected=bme280.begin();
-  if (BME280detected) {
-    Serial.printf("bin da\r\n");
-     delay(500);
-
+    if (BME280detected) {
+      Serial.printf("BME280 detected");
+      outsideTemp=bme280.readTemperature();
+      humidity=bme280.readHumidity();
+      airPressure=bme280.readPressure();
+      airPressureHPA=(airPressure / 100.0);
+      unusedField=bme280.readAltitude(SEALEVELPRESSURE_HPA);
+    }
+    //wire Temperatures
     sensors.requestTemperatures();
-    
     insideTemp=sensors.getTempCByIndex(0);
-    //insideTemp=0.0;
-    Serial.print("oooo   :");
-    Serial.println(bme280.readTemperature());
-    outsideTemp=bme280.readTemperature();
-    humidity=bme280.readHumidity();
-    airPressure=bme280.readPressure();
-    airPressureHPA=(airPressure / 100.0);
-    airQuality=0;
-    unusedField=bme280.readAltitude(SEALEVELPRESSURE_HPA);
     Wire.end();
+
+    if (scale.is_ready()) {
+       Serial.printf("HX711 detected");
+       long reading = scale.read() - LOADCELL_TARA;
+       weight = (reading / LOADCELL_CALIB_FACTOR);
+    } 
+
     uint16_t voltageRAW = getBatteryVoltage();
     voltage = static_cast<double>(voltageRAW);
     voltage = (voltage / 1000.0);
-  }
+  
   state=TX;
   Serial.printf("STATE: TX\r\n");
 }
@@ -221,7 +234,30 @@ void  DoubleToString( char *str, double double_num,unsigned int len) {
   sprintf(str + strlen(str), ".%d", (int)(fractpart)); //Decimal part
 }
 
+void setupHX711() {
+  Serial.println("Initializing the LOAD_CELL");
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
+  //Serial.println("Before setting up the scale:");
+  //Serial.print("read: \t\t");
+  //Serial.println(scale.read());      // print a raw reading from the ADC
+
+  
+  //Serial.print("read average: \t\t");
+  //Serial.println(scale.read_average(20));   // print the average of 20 readings from the ADC
+
+  //Serial.print("get value: \t\t");
+  //Serial.println(scale.get_value(5));   // print the average of 5 readings from the ADC minus the tare weight (not set yet)
+
+  //Serial.print("get units: \t\t");
+  //Serial.println(scale.get_units(5), 1);  // print the average of 5 readings from the ADC minus tare weight (not set) divided
+            // by the SCALE parameter (not set yet)
+
+  //scale.set_scale(2280.f);                      // this value is obtained by calibrating the scale with known weights; see the README for details
+  //scale.tare();               // reset the scale to 0
+
+  Serial.println("After setting up the scale:");
+}
 void setup() {
     pinMode(Vext, OUTPUT);
     digitalWrite(Vext, LOW);
@@ -232,19 +268,20 @@ void setup() {
     Serial.print("monitoredBees is initializing \r\n");
     sensors.begin();
     BME280detected=bme280.begin();
+  
     if (BME280detected) Serial.printf("BME280 initialized= %s \r\n","true");
     if (!BME280detected)Serial.printf("BME280 initialized= %s \r\n","false");
     //digitalWrite(Vext, LOW);
-
+    setupHX711();
 
     insideTemp=0.0;
     outsideTemp=0.0;
     humidity=0.0;
     airPressure=0.0;
     airPressureHPA=0.0;
-    airQuality=0;
     unusedField=0.0;
     voltage=0;
+    weight=0;
     rssi=0;
     RadioEvents.TxDone = OnTxDone;
     RadioEvents.TxTimeout = OnTxTimeout;
