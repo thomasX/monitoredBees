@@ -23,8 +23,8 @@ with sf=12  ... max 20 messages per day !
 |BME280 GND | black | gnd |
 |BME280 vcc | red | vext  |
 |    |    |    |
-|HX711 DO|   |  GPIO2 |
-|HX711 CLK|   |  GPIO3 |
+|HX711 DO|   |  GPIO5 |
+|HX711 CLK|   |  GPIO4 |
 |HX711 GND|   |  GND |
 |HX711 VCC|   |  vext |
 |    |    |    |
