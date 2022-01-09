@@ -66,8 +66,13 @@ Adafruit_BME280 bme280; // I2C
 
 
 // ---- toms paramater 15 minuten takt
-#define timetillwakeup 1000*60*15
-//#define timetillwakeup 1000*10
+//#define timetillwakeup 1000*60*15
+//#define timetillwakeup 1000*30
+
+// ---- toms paramater 30 minuten takt
+#define timetillwakeup 1000*60*30
+
+
 
 HX711 scale; 
 
@@ -123,6 +128,7 @@ States_t state;
 void onSleep()
 {
   Serial.printf("Going into lowpower mode, %d ms later wake up.\r\n",timetillwakeup);
+  digitalWrite(Vext, HIGH);
   delay(500);
   lowpower=1;
   //timetillwakeup ms later wake up;
@@ -134,6 +140,7 @@ void onWakeUp()
 {
   Serial.printf("Woke up\r\n");
   lowpower=0;
+  digitalWrite(Vext, LOW);
   delay(500);
   state=READSENSORDATA;
 }
@@ -185,6 +192,9 @@ void readSensorValues( void )
     }
     //wire Temperatures
     sensors.requestTemperatures();
+    delay(10);
+    sensors.requestTemperatures();
+
     insideTemp=sensors.getTempCByIndex(0);
     Wire.end();
 
