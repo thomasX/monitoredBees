@@ -64,10 +64,9 @@ Adafruit_BME280 bme280; // I2C
 //#define BUFFER_SIZE                                 30 // Define the payload size here
 #define BUFFER_SIZE                                 150 // Define the payload size here
 
-
 // ---- toms paramater 15 minuten takt
 //#define timetillwakeup 1000*60*15
-//#define timetillwakeup 1000*30
+//#define timetillwakeup 1000*10
 
 // ---- toms paramater 30 minuten takt
 #define timetillwakeup 1000*60*30
@@ -109,7 +108,10 @@ double weight; // field6
 double airPressureHPA;
 double unusedField;
 
+#define WITH_SERIAL_LOGGING    0
 
+char logMsg[255];
+void logSerial( char *msg );
 
 int16_t rssi,rxSize;
 void  DoubleToString( char *str, double double_num,unsigned int len);
@@ -125,9 +127,16 @@ typedef enum
 
 States_t state;
 
+void logSerial( char *msg ) {
+  if (WITH_SERIAL_LOGGING) {
+    Serial.printf("OOOOOO   %s\r\n",msg);  
+  }
+}
+
 void onSleep()
 {
-  Serial.printf("Going into lowpower mode, %d ms later wake up.\r\n",timetillwakeup);
+  sprintf(logMsg,"Going into lowpower mode, %d ms later wake up.\r\n",timetillwakeup);
+  logSerial( logMsg );
   digitalWrite(Vext, HIGH);
   delay(500);
   lowpower=1;
@@ -138,7 +147,7 @@ void onSleep()
 
 void onWakeUp()
 {
-  Serial.printf("Woke up\r\n");
+  logSerial("Woke up");
   lowpower=0;
   digitalWrite(Vext, LOW);
   delay(500);
@@ -152,10 +161,11 @@ void sendLoraData()
   generateDataPacket();  
   //1turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
 
-  Serial.printf("sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
+    sprintf(logMsg,"sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
+    logSerial( logMsg );
   state=WAITING;
   Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out 
-  Serial.printf("STATE: SENDING\r\n");
+  logSerial("STATE: SENDING");
   //delay(500);
   //1turnOffRGB();    ... funktioniert nicht mit lowpower und sensor
 }
@@ -178,12 +188,12 @@ void generateDataPacket( void )
 
 void readSensorValues( void )
 {
-  Serial.printf("bin im readSensoValues\r\n");
+  logSerial("bin im readSensoValues");
     digitalWrite(Vext, LOW);
     delay(2000);
     BME280detected=bme280.begin();
     if (BME280detected) {
-      Serial.printf("BME280 detected");
+      logSerial("BME280 detected");
       outsideTemp=bme280.readTemperature();
       humidity=bme280.readHumidity();
       airPressure=bme280.readPressure();
@@ -199,7 +209,7 @@ void readSensorValues( void )
     Wire.end();
 
     if (scale.is_ready()) {
-       Serial.printf("HX711 detected");
+       logSerial("HX711 detected");
        long reading = scale.read() - LOADCELL_TARA;
        weight = (reading / LOADCELL_CALIB_FACTOR);
     } 
@@ -209,12 +219,12 @@ void readSensorValues( void )
     voltage = (voltage / 1000.0);
   
   state=TX;
-  Serial.printf("STATE: TX\r\n");
+  logSerial("STATE: TX");
 }
 
 void OnTxDone( void )
 {
-  Serial.printf("TX done!\r\n");
+  logSerial("TX done!");
   delay(500);
   state=WAITING;
   onSleep();
@@ -224,9 +234,9 @@ void OnTxDone( void )
 void OnTxTimeout( void )
 {
     //Radio.Sleep( );
-    Serial.printf("TX Timeout......\r\n");
+    logSerial("TX Timeout......");
     state=READSENSORDATA;
-    Serial.printf("STATE: READSENSORDATA\r\n");
+    logSerial("STATE: READSENSORDATA");
 }
 
 /**
@@ -245,7 +255,7 @@ void  DoubleToString( char *str, double double_num,unsigned int len) {
 }
 
 void setupHX711() {
-  Serial.println("Initializing the LOAD_CELL");
+  logSerial("Initializing the LOAD_CELL");
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
   //Serial.println("Before setting up the scale:");
@@ -266,21 +276,29 @@ void setupHX711() {
   //scale.set_scale(2280.f);                      // this value is obtained by calibrating the scale with known weights; see the README for details
   //scale.tare();               // reset the scale to 0
 
-  Serial.println("After setting up the scale:");
+  logSerial("After setting up the scale:");
 }
 void setup() {
     pinMode(Vext, OUTPUT);
     digitalWrite(Vext, LOW);
     delay(500);
-    Serial.begin(115200);
-    delay(2000);
-    while(!Serial);    // time to get serial running
-    Serial.print("monitoredBees is initializing \r\n");
+    if (WITH_SERIAL_LOGGING) {
+      Serial.begin(115200);    
+      delay(2000);
+      while(!Serial);    // time to get serial running
+    }
+    logSerial("monitoredBees is initializing ");
     sensors.begin();
     BME280detected=bme280.begin();
   
-    if (BME280detected) Serial.printf("BME280 initialized= %s \r\n","true");
-    if (!BME280detected)Serial.printf("BME280 initialized= %s \r\n","false");
+    if (BME280detected) {
+      sprintf(logMsg,"BME280 initialized= %s ","true");
+      logSerial(logMsg);
+    }
+    if (!BME280detected) {
+       sprintf(logMsg,"BME280 initialized= %s ","false");
+       logSerial(logMsg);
+    }
     //digitalWrite(Vext, LOW);
     setupHX711();
 
@@ -306,7 +324,7 @@ void setup() {
     TimerInit( &sleep, onSleep );
     TimerInit( &wakeUp, onWakeUp );
     state=READSENSORDATA;
-    Serial.printf("STATE:READSENSORDATA\r\n");
+    logSerial("STATE:READSENSORDATA");
    }
 
 
