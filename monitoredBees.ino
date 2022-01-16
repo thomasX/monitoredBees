@@ -71,6 +71,7 @@ Adafruit_BME280 bme280; // I2C
 // ---- toms paramater 30 minuten takt
 #define timetillwakeup 1000*60*30
 
+#define WITH_SERIAL_LOGGING    0
 
 
 HX711 scale; 
@@ -108,7 +109,6 @@ double weight; // field6
 double airPressureHPA;
 double unusedField;
 
-#define WITH_SERIAL_LOGGING    0
 
 char logMsg[255];
 void logSerial( char *msg );
@@ -173,11 +173,11 @@ void sendLoraData()
 void generateDataPacket( void )
 {
     sprintf(txpacket,"<%s>field1=",DEVICE_ID);
-    DoubleToString(txpacket,insideTemp,3);
+    DoubleToString(txpacket,insideTemp,1);
     sprintf(txpacket,"%s&field2=",txpacket);
-    DoubleToString(txpacket,outsideTemp,3);
+    DoubleToString(txpacket,outsideTemp,1);
     sprintf(txpacket,"%s&field3=",txpacket);
-    DoubleToString(txpacket,humidity,3);
+    DoubleToString(txpacket,humidity,1);
     sprintf(txpacket,"%s&field4=",txpacket);
     DoubleToString(txpacket,airPressureHPA,3);  
     sprintf(txpacket,"%s&field5=",txpacket);
