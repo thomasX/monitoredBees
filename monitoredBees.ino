@@ -17,8 +17,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <HX711.h>
-const int LOADCELL_DOUT_PIN = GPIO5;
-const int LOADCELL_SCK_PIN = GPIO4;
 
 
 #define ONE_WIRE_BUS GPIO0
@@ -44,7 +42,7 @@ Adafruit_BME280 bme280; // I2C
 #define LoraWan_RGB 0
 #endif
 
-#define RF_FREQUENCY                                868200000 // Hz
+#define RF_FREQUENCY                                868700000 // Hz
 #define TX_OUTPUT_POWER                             14        // dBm
 #define LORA_BANDWIDTH                              0         // [0: 125 kHz,                                                              //  1: 250 kHz,
                                                               //  2: 500 kHz,
@@ -62,24 +60,27 @@ Adafruit_BME280 bme280; // I2C
 
 #define RX_TIMEOUT_VALUE                            1000
 //#define BUFFER_SIZE                                 30 // Define the payload size here
-#define BUFFER_SIZE                                 150 // Define the payload size here
+#define BUFFER_SIZE                                150 // Define the payload size here
 
-// ---- toms paramater 15 minuten takt
-//#define timetillwakeup 1000*60*15
+// ---- toms paramater 1 minuten takt
+//#define timetillwakeup 1000*60*1
 //#define timetillwakeup 1000*10
 
 // ---- toms paramater 30 minuten takt
 #define timetillwakeup 1000*60*30
 
-#define WITH_SERIAL_LOGGING    0
+#define WITH_SERIAL_LOGGING    1
 
 
+const int LOADCELL_DOUT_PIN = GPIO4;
+const int LOADCELL_SCK_PIN = GPIO5;
 HX711 scale; 
 
-#define LOADCELL_CALIB_FACTOR 234
-#define LOADCELL_TARA 1300
+//#define LOADCELL_CALIB_FACTOR 234
+//#define LOADCELL_TARA 1300
 
-
+#define LOADCELL_CALIB_FACTOR 11353
+#define LOADCELL_TARA 21875
 
 
 
@@ -157,17 +158,19 @@ void onWakeUp()
 
 void sendLoraData()
 {
-  //1turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
+    //turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
   generateDataPacket();  
-  //1turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
+    //turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
 
     sprintf(logMsg,"sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
     logSerial( logMsg );
-  state=WAITING;
   Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out 
   logSerial("STATE: SENDING");
-  //delay(500);
-  //1turnOffRGB();    ... funktioniert nicht mit lowpower und sensor
+  state=WAITING;
+
+  delay(500);
+    //turnOffRGB();    //... funktioniert nicht mit lowpower und sensor
+ 
 }
 
 void generateDataPacket( void )
@@ -211,6 +214,9 @@ void readSensorValues( void )
     if (scale.is_ready()) {
        logSerial("HX711 detected");
        long reading = scale.read() - LOADCELL_TARA;
+           Serial.printf("hx711   %s\r\n","AHA!");  
+           Serial.printf("hx711   %ld\r\n",reading);  
+
        weight = (reading / LOADCELL_CALIB_FACTOR);
     } 
 
@@ -228,7 +234,7 @@ void OnTxDone( void )
   delay(500);
   state=WAITING;
   onSleep();
-  //turnOnRGB(0,0);  ... funktioniert nicht mit lowpower und sensor
+    //turnOnRGB(0,0); // ... funktioniert nicht mit lowpower und sensor
 }
 
 void OnTxTimeout( void )
@@ -256,6 +262,7 @@ void  DoubleToString( char *str, double double_num,unsigned int len) {
 
 void setupHX711() {
   logSerial("Initializing the LOAD_CELL");
+  delay(5000);
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
   //Serial.println("Before setting up the scale:");
@@ -274,7 +281,7 @@ void setupHX711() {
             // by the SCALE parameter (not set yet)
 
   //scale.set_scale(2280.f);                      // this value is obtained by calibrating the scale with known weights; see the README for details
-  //scale.tare();               // reset the scale to 0
+  scale.tare();               // reset the scale to 0
 
   logSerial("After setting up the scale:");
 }
