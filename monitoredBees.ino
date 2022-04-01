@@ -217,7 +217,7 @@ void readSensorValues( void )
            Serial.printf("hx711   %s\r\n","AHA!");  
            Serial.printf("hx711   %ld\r\n",reading);  
 
-       weight = (reading / LOADCELL_CALIB_FACTOR);
+       weight = (1.0 * reading / LOADCELL_CALIB_FACTOR);
     } 
 
     uint16_t voltageRAW = getBatteryVoltage();
