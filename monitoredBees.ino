@@ -18,6 +18,7 @@
 #include <DallasTemperature.h>
 #include <HX711.h>
 
+// #define MODE_TESTING_ONLY 1
 
 #define ONE_WIRE_BUS GPIO0
 OneWire oneWire(ONE_WIRE_BUS);
@@ -63,11 +64,19 @@ Adafruit_BME280 bme280; // I2C
 #define BUFFER_SIZE                                150 // Define the payload size here
 
 // ---- toms paramater 1 minuten takt
-//#define timetillwakeup 1000*60*1
-//#define timetillwakeup 1000*10
+//int timetillwakeup = 1000*60*1;
+//int timetillwakeup = 1000*10;
+#ifndef MODE_TESTING_ONLY
+  #define timetillwakeup 1000*60*30
+  const char DEVICE_ID[] PROGMEM = "4567";
+#endif
+#ifdef MODE_TESTING_ONLY
+  const char DEVICE_ID[] PROGMEM = "5678";
+  #define timetillwakeup 1000*3
+#endif
 
 // ---- toms paramater 30 minuten takt
-#define timetillwakeup 1000*60*30
+// #define timetillwakeup 1000*60*30
 
 #define WITH_SERIAL_LOGGING    1
 
@@ -92,8 +101,6 @@ static TimerEvent_t wakeUp;
 uint8_t lowpower=0;
 
 
-
-const char DEVICE_ID[] PROGMEM = "4567";
 char txpacket[BUFFER_SIZE];
 char rxpacket[BUFFER_SIZE];
 
@@ -307,8 +314,10 @@ void setup() {
        logSerial(logMsg);
     }
     //digitalWrite(Vext, LOW);
-    setupHX711();
-
+    #ifndef MODE_TESTING_ONLY
+       setupHX711();
+    #endif
+    
     insideTemp=0.0;
     outsideTemp=0.0;
     humidity=0.0;
