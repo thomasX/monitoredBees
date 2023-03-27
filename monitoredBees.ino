@@ -18,7 +18,7 @@
 #include <DallasTemperature.h>
 #include <HX711.h>
 
-// #define MODE_TESTING_ONLY 1
+#define MODE_TESTING_ONLY 1
 
 #define ONE_WIRE_BUS GPIO0
 OneWire oneWire(ONE_WIRE_BUS);
@@ -64,10 +64,10 @@ Adafruit_BME280 bme280; // I2C
 #define BUFFER_SIZE                                150 // Define the payload size here
 
 // ---- toms paramater 1 minuten takt
-//int timetillwakeup = 1000*60*1;
+//int timetillwakeup = 1000*60*15;
 //int timetillwakeup = 1000*10;
 #ifndef MODE_TESTING_ONLY
-  #define timetillwakeup 1000*60*30
+  #define timetillwakeup 1000*60*15
   const char DEVICE_ID[] PROGMEM = "4567";
 #endif
 #ifdef MODE_TESTING_ONLY
@@ -119,6 +119,8 @@ double unusedField;
 
 
 char logMsg[255];
+byte loraPacket[12];
+
 void logSerial( char *msg );
 
 int16_t rssi,rxSize;
@@ -146,7 +148,7 @@ void onSleep()
   sprintf(logMsg,"Going into lowpower mode, %d ms later wake up.\r\n",timetillwakeup);
   logSerial( logMsg );
   digitalWrite(Vext, HIGH);
-  delay(500);
+  //delay(500);
   lowpower=1;
   //timetillwakeup ms later wake up;
   TimerSetValue( &wakeUp, timetillwakeup );
@@ -167,6 +169,7 @@ void sendLoraData()
 {
     //turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
   generateDataPacket();  
+  generateLoraPacket();
     //turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
 
     sprintf(logMsg,"sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
@@ -175,7 +178,7 @@ void sendLoraData()
   logSerial("STATE: SENDING");
   state=WAITING;
 
-  delay(500);
+  //delay(500);
     //turnOffRGB();    //... funktioniert nicht mit lowpower und sensor
  
 }
@@ -195,7 +198,28 @@ void generateDataPacket( void )
     sprintf(txpacket,"%s&field6=",txpacket);
     DoubleToString(txpacket,weight,3);
 }
+inline
+boolean isUndefined(float value) {
+  return isnan(value) || value == -127.0f;
+}
 
+void add2LoraPacket(int index, float value){
+  
+  int currentValue = value * 100;
+  loraPacket[index] = highByte(currentValue);
+  loraPacket[index+1] = lowByte(currentValue);
+}
+
+void generateLoraPacket( void )
+{
+  
+    convertToBytes(int 0,insideTemp);
+    convertToBytes(int 2,outsideTemp);
+    convertToBytes(int 4,humidity);
+    convertToBytes(int 6,airPressureHPA);
+    convertToBytes(int 8,voltage);
+    convertToBytes(int 10,weight);
+}
 void readSensorValues( void )
 {
   logSerial("bin im readSensoValues");
@@ -238,7 +262,7 @@ void readSensorValues( void )
 void OnTxDone( void )
 {
   logSerial("TX done!");
-  delay(500);
+  //delay(500);
   state=WAITING;
   onSleep();
     //turnOnRGB(0,0); // ... funktioniert nicht mit lowpower und sensor
@@ -366,6 +390,11 @@ void loop()
         Radio.IrqProcess();
         break;
       }
+      default:
+      {  Radio.IrqProcess();
+        logSerial("STATE:nicht vorhanden");
+      }
+
     }
   }
 }
