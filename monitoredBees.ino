@@ -105,7 +105,6 @@ double unusedField;
 
 
 char logMsg[255];
-byte loraPacket[12];
 
 void logSerial( char *msg );
 
@@ -155,7 +154,6 @@ void sendLoraData()
 {
     //turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
   generateDataPacket();  
-  generateLoraPacket();
     //turnOnRGB(COLOR_SEND,0); //change rgb color    ... funktioniert nicht mit lowpower und sensor
     sprintf(logMsg,"sending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
     logSerial( logMsg );
@@ -188,22 +186,6 @@ boolean isUndefined(float value) {
   return isnan(value) || value == -127.0f;
 }
 
-void add2LoraPacket(int index, float value){
-  int currentValue = value * 100;
-  loraPacket[index] = highByte(currentValue);
-  loraPacket[index+1] = lowByte(currentValue);
-}
-
-void generateLoraPacket( void )
-{
-  
-    convertToBytes(int 0,insideTemp);
-    convertToBytes(int 2,outsideTemp);
-    convertToBytes(int 4,humidity);
-    convertToBytes(int 6,airPressureHPA);
-    convertToBytes(int 8,voltage);
-    convertToBytes(int 10,weight);
-}
 void readSensorValues( void )
 {
   logSerial("bin im readSensoValues");
