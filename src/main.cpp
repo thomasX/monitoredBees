@@ -18,7 +18,7 @@
 #include <DallasTemperature.h>
 #include <HX711.h>
 
-// #define MODE_TESTING_ONLY 1
+#define MODE_TESTING_ONLY 1
 
 #define ONE_WIRE_BUS GPIO0
 OneWire oneWire(ONE_WIRE_BUS);
@@ -150,6 +150,22 @@ void onWakeUp()
 }
 
 
+void generateDataPacket( void )
+{
+    sprintf(txpacket,"<%s>field1=",DEVICE_ID);
+    DoubleToString(txpacket,insideTemp,1);
+    sprintf(txpacket,"%s&field2=",txpacket);
+    DoubleToString(txpacket,outsideTemp,1);
+    sprintf(txpacket,"%s&field3=",txpacket);
+    DoubleToString(txpacket,humidity,1);
+    sprintf(txpacket,"%s&field4=",txpacket);
+    DoubleToString(txpacket,airPressureHPA,3);  
+    sprintf(txpacket,"%s&field5=",txpacket);
+    DoubleToString(txpacket,voltage,3);
+    sprintf(txpacket,"%s&field6=",txpacket);
+    DoubleToString(txpacket,weight,3);
+}
+
 void sendLoraData()
 {
     //turnOnRGB(COLOR_RECEIVED,0); //change rgb color  ... funktioniert nicht mit lowpower und sensor
@@ -166,21 +182,6 @@ void sendLoraData()
  
 }
 
-void generateDataPacket( void )
-{
-    sprintf(txpacket,"<%s>field1=",DEVICE_ID);
-    DoubleToString(txpacket,insideTemp,1);
-    sprintf(txpacket,"%s&field2=",txpacket);
-    DoubleToString(txpacket,outsideTemp,1);
-    sprintf(txpacket,"%s&field3=",txpacket);
-    DoubleToString(txpacket,humidity,1);
-    sprintf(txpacket,"%s&field4=",txpacket);
-    DoubleToString(txpacket,airPressureHPA,3);  
-    sprintf(txpacket,"%s&field5=",txpacket);
-    DoubleToString(txpacket,voltage,3);
-    sprintf(txpacket,"%s&field6=",txpacket);
-    DoubleToString(txpacket,weight,3);
-}
 inline
 boolean isUndefined(float value) {
   return isnan(value) || value == -127.0f;
