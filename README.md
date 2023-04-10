@@ -13,6 +13,7 @@ with sf=12  ... max 20 messages per day !
 - optional:  DS18B20 temperature sensor (1-Wire for external use) 
 - 3,7V 1100mAh Lipo Accu 1S 3C
 - optional: solar panel 1W 5V 100mA
+- this version is tested with the Dragino LG02 LoRa gateway without TTN-Support. If you need TTN support, choose https://github.com/thomasX/monitoredLoraBees
 
 ### pinout
 
